@@ -10,6 +10,9 @@ resources:
       name: 1ESPipelineTemplates/1ESPipelineTemplates
       ref: refs/tags/release
 
+variables:
+  Codeql.InitParameters: '--codescanning-config=$(Build.SourcesDirectory)/.github/codeql/codeql-configuration.yml'
+
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1esPipelines
   parameters:
@@ -28,8 +31,8 @@ extends:
       - stage: buildStage
         displayName: Build Stage
         jobs:
-          - job: build
-            displayName: Build
+          - job: test
+            displayName: Test
             steps:
               - checkout: self
                 clean: true
@@ -52,9 +55,32 @@ extends:
               - script: 'npm test'
                 displayName: 'npm test'
 
+          - job: build
+            displayName: Build
+            dependsOn: test
+            steps:
+              - checkout: self
+                clean: true
+                fetchDepth: 1
+                fetchTags: false
+
+              - task: NodeTool@0
+                inputs:
+                  versionSpec: 20.x
+                displayName: 'Install Node'
+
+              - script: |
+                  npm install -g `node -e 'console.log(JSON.parse(fs.readFileSync("package.json", "utf8")).packageManager)'`
+                  npm --version
+                displayName: 'Install packageManager from package.json'
+
+              - script: npm ci
+                displayName: 'npm ci'
+
               - script: |
                   npx hereby LKG
                   npx hereby clean
+                  node ./scripts/addPackageJsonGitHead.mjs package.json
                   npm pack
                 displayName: 'LKG, clean, pack'
 

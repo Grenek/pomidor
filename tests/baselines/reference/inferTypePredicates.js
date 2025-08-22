@@ -270,6 +270,49 @@ function inferWithRest(x: string | null, ...f: ["a", "b"]) {
   return typeof x === 'string';
 }
 
+// https://github.com/microsoft/TypeScript/issues/57947
+declare const foobar:
+  | { type: "foo"; foo: number }
+  | { type: "bar"; bar: string };
+
+const foobarPred = (fb: typeof foobar) => fb.type === "foo";
+if (foobarPred(foobar)) {
+  foobar.foo;
+}
+
+// https://github.com/microsoft/TypeScript/issues/60778
+const arrTest: Array<number> = [1, 2, null, 3].filter(
+  (x) => (x != null) satisfies boolean,
+);
+
+function isEmptyString(x: unknown) {
+  const rv = x === "";
+  return rv satisfies boolean;
+}
+
+// https://github.com/microsoft/TypeScript/issues/58996
+type Animal = {
+  breath: true,
+};
+
+type Rock = {
+  breath: false,
+};
+
+type Something = Animal | Rock;
+
+function isAnimal(something: Something): something is Animal {
+  return something.breath
+}
+
+function positive(t: Something) {
+  return isAnimal(t)
+}
+
+function negative(t: Something) { 
+  return !isAnimal(t)
+}
+
 
 //// [inferTypePredicates.js]
 // https://github.com/microsoft/TypeScript/issues/16069
@@ -524,6 +567,25 @@ function inferWithRest(x) {
     }
     return typeof x === 'string';
 }
+var foobarPred = function (fb) { return fb.type === "foo"; };
+if (foobarPred(foobar)) {
+    foobar.foo;
+}
+// https://github.com/microsoft/TypeScript/issues/60778
+var arrTest = [1, 2, null, 3].filter(function (x) { return (x != null); });
+function isEmptyString(x) {
+    var rv = x === "";
+    return rv;
+}
+function isAnimal(something) {
+    return something.breath;
+}
+function positive(t) {
+    return isAnimal(t);
+}
+function negative(t) {
+    return !isAnimal(t);
+}
 
 
 //// [inferTypePredicates.d.ts]
@@ -602,6 +664,29 @@ declare function assertAndPredicate(x: string | number | Date): x is string;
 declare let snd: string | number | Date;
 declare function isNumberWithThis(this: Date, x: number | string): x is number;
 declare function narrowFromAny(x: any): x is number;
-declare const noInferenceFromRest: (f_0: "a" | "b") => boolean;
-declare const noInferenceFromImpossibleRest: () => boolean;
+declare const noInferenceFromRest: (...f: ["a" | "b"]) => boolean;
+declare const noInferenceFromImpossibleRest: (...f: []) => boolean;
 declare function inferWithRest(x: string | null, ...f: ["a", "b"]): x is string;
+declare const foobar: {
+    type: "foo";
+    foo: number;
+} | {
+    type: "bar";
+    bar: string;
+};
+declare const foobarPred: (fb: typeof foobar) => fb is {
+    type: "foo";
+    foo: number;
+};
+declare const arrTest: Array<number>;
+declare function isEmptyString(x: unknown): x is "";
+type Animal = {
+    breath: true;
+};
+type Rock = {
+    breath: false;
+};
+type Something = Animal | Rock;
+declare function isAnimal(something: Something): something is Animal;
+declare function positive(t: Something): t is Animal;
+declare function negative(t: Something): t is Rock;
